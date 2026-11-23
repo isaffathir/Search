@@ -5,14 +5,22 @@ changes on the `fork` branch. `main` follows the original untouched.
 
 ## What's different
 
-- **Unread badge on pins**: a pin shows the count its page puts at the front
-  of its title (`(3) WhatsApp` → a red **3** on the pin), in the column and
-  in the tab bar. `Sources/Search/UnreadBadge.swift`.
-- **Scrolling asks less**: the page reports its scroll to the window only
-  when the tab's meter would change (151 → 47 messages per 150 scrolled
-  frames, measured), Swipe.watch no longer lays the page out on every
-  vertical scroll, and the "show password" watch skips pages with nothing
-  secret on them.
+- **Unread badge on pins** (proposed upstream: issue #1433, PR #1434):
+  Settings › Appearance › Tabs › Show counts on pins puts the count a page
+  writes at the front of its title (`(3) WhatsApp`) as a red badge on the
+  corner of its pin's icon, in the column and in the tab bar. Off by
+  default, as upstream wants new features; switch it on in Settings.
+  `Sources/Search/UnreadBadge.swift`.
+- **Scrolling asks less** (proposed upstream: PR #1435): the page reports its
+  scroll to the window only when the tab's meter would change (151 → 47
+  messages per 150 scrolled frames, measured), Swipe.watch no longer lays
+  the page out on every vertical scroll, and the "show password" watch
+  skips pages with nothing secret on them.
+
+If upstream merges one of these as it is, the rebase in update-fork.sh drops
+the fork's copy on its own. If it is changed on the way in, the rebase stops
+with a conflict on that commit: keep upstream's version (`git rebase --skip`),
+then run the script again.
 - **Updates come from this fork, not the feed**: a copy signed by anyone
   but Office Commun never downloads a release (it could never install one);
   it says once per version that the original has a newer one.

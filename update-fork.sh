@@ -54,6 +54,9 @@ fi
 
 APP="build/Search.app"
 TARGET="/Applications/Search.app"
+# A build made by ./build.sh alone is ad hoc: signed here before it goes in,
+# or the keychain would ask again after every one.
+codesign -dv "$APP" 2>&1 | grep -q '^TeamIdentifier=[A-Z0-9]' || sign
 codesign --verify --strict "$APP"
 
 # Quit the way ⌘Q does, so the session is saved and comes back.
