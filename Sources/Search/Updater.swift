@@ -168,9 +168,12 @@ final class Updater: ObservableObject {
         }
         guard !checking else { return }
         say?("Checking for updates…")
+        // Fork: asked by hand, said again even if said before (`check` says it).
+        if Updater.foreign { Store.settings.removeObject(forKey: Updater.foreignSaidKey) }
         check { [weak self] found in
             guard let self else { return }
             if found == nil { self.say?("Search is up to date"); return }
+            if Updater.foreign { return }
             // The waiting branch or `take` announces the next state afterward.
         }
     }
@@ -193,6 +196,14 @@ final class Updater: ObservableObject {
                 return
             }
             done(found)
+            // Fork: said, never fetched (see `foreign`).
+            if Updater.foreign {
+                if Store.settings.string(forKey: Updater.foreignSaidKey) != found.version {
+                    Store.settings.set(found.version, forKey: Updater.foreignSaidKey)
+                    say?(Updater.forkLine(found.version))
+                }
+                return
+            }
             guard !installsOnItsOwn else { take(found); return }
             switch stage {
             case .fetching, .ready: break
@@ -366,6 +377,24 @@ final class Updater: ObservableObject {
 
     /// The team that signs Search's releases, and with them its feed.
     nonisolated static let team = "7BYKA895MC"
+
+    /// Fork: this copy signed by someone else — built from a fork by its
+    /// owner. No release from the feed could ever be swapped in under it
+    /// (install checks the team), so none is fetched; a newer one is only
+    /// said, once a version, for update-fork.sh to bring in.
+    static let foreign: Bool = {
+        var code: SecStaticCode?
+        var info: CFDictionary?
+        guard SecStaticCodeCreateWithPath(Bundle.main.bundleURL as CFURL, [], &code) == errSecSuccess, let code,
+              SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &info) == errSecSuccess,
+              let signing = info as? [String: Any]
+        else { return true }
+        return signing[kSecCodeInfoTeamIdentifier as String] as? String != team
+    }()
+    private static let foreignSaidKey = "update.fork.said"
+    static func forkLine(_ version: String) -> String {
+        "Search \(version) is out — run ~/Search-fork/update-fork.sh to bring this fork up to it"
+    }
     nonisolated static let feedIdentifier = "com.officecommun.search.appcast"
 
     /// The feed inside `packed`, if it is Office Commun's: appcast.json with
