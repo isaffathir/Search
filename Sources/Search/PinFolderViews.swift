@@ -197,12 +197,12 @@ struct FeedItemRow: View {
     var body: some View {
         Group {
             if compact {
-                Image(systemName: "doc.text")
+                Image(systemName: item.symbol)
                     .font(.system(size: 11))
                     .frame(width: Metrics.iconTile, height: Metrics.iconTile)
             } else {
                 HStack(spacing: 8) {
-                    Image(systemName: "doc.text")
+                    Image(systemName: item.symbol)
                         .font(.system(size: 10))
                         .frame(width: 15)
                     Text(item.title)

@@ -4,6 +4,8 @@ import AppKit
 // RSS, a GitHub repository's releases.atom or commits.atom — rather than by
 // hand. It holds the feed's latest posts, each a line that opens its page in
 // a new tab as a bookmark would; never a pin, never carried in or out.
+// A GitHub pull requests page has no feed: its folder holds the pull
+// requests open there, from GitHub's search (GitHubPulls.swift).
 //
 // Only where pin folders are (Settings › Spaces & Pins › Folders in pinned
 // rows, with Pinned rows): with the switch off nothing is fetched.
@@ -28,23 +30,29 @@ enum LiveFolders {
     /// Folders being fetched now: a second Refresh waits for the first.
     private static var fetching: Set<UUID> = []
     private static var timer: Timer?
+    /// GitHub's folders (GitHubPulls.swift), every five minutes.
+    private static var quick: Timer?
 
     /// At launch: a first fetch once the windows are up, then every half
-    /// hour.
+    /// hour, and GitHub's every five minutes.
     static func start() {
         guard timer == nil else { return }
         timer = Timer.scheduledTimer(withTimeInterval: every, repeats: true) { _ in
             MainActor.assumeIsolated { refreshAll() }
         }
+        quick = Timer.scheduledTimer(withTimeInterval: GitHubPulls.every, repeats: true) { _ in
+            MainActor.assumeIsolated { refreshAll { GitHubPulls.query($0) != nil } }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { refreshAll() }
     }
 
-    /// Every live folder of every space, while the switch is on.
-    static func refreshAll() {
+    /// Every live folder of every space whose feed `which` takes, while the
+    /// switch is on.
+    static func refreshAll(_ which: (URL) -> Bool = { _ in true }) {
         guard Shared.prefs.showsPinFolders else { return }
         PinFolders.load()
         for (space, folders) in PinFolders.bySpace {
-            for folder in folders where folder.isLive { refresh(folder.id, in: space) }
+            for folder in folders where folder.feed.map(which) == true { refresh(folder.id, in: space) }
         }
     }
 
@@ -76,7 +84,7 @@ enum LiveFolders {
     /// with no feed; it says so.
     static func ask(for browser: Browser, in parent: UUID?) {
         Ask.name("New Live Folder",
-                 detail: "A feed’s address, or a site’s that has one. Its latest posts fill the folder, kept fresh every half hour.",
+                 detail: "A feed’s address, or a site’s that has one. Its latest posts fill the folder, kept fresh every half hour. A GitHub pull requests page (github.com/pulls, or a repository’s) fills it with what is open there, every five minutes.",
                  placeholder: "https://example.com/feed.xml", confirm: "Add") { text in
             guard let url = Feed.address(text) else {
                 Ask.tell("That isn’t a web address", detail: "A feed’s address starts with https:// or http://.")
@@ -135,12 +143,15 @@ enum Feed {
 
     enum Problem: Error, Equatable {
         case network, tooBig, notAFeed
+        /// What GitHub's search said no for (GitHubPulls.swift), said whole.
+        case gitHub(String)
 
         func said(_ url: URL) -> String {
             switch self {
             case .network: "\(url.host() ?? url.absoluteString) couldn’t be reached."
             case .tooBig: "What \(url.host() ?? url.absoluteString) sent is too large to be a feed."
             case .notAFeed: "There’s no RSS or Atom feed at \(url.absoluteString), nor one that page points to."
+            case .gitHub(let said): said
             }
         }
     }
@@ -174,8 +185,10 @@ enum Feed {
         return URLSession(configuration: config)
     }()
 
-    /// The feed at `url`, or, for a page, the feed the page points to.
+    /// The feed at `url`, or, for a page, the feed the page points to. A
+    /// GitHub pull requests page is GitHub's search instead.
     static func load(_ url: URL) async -> Result<Read, Problem> {
+        if let query = GitHubPulls.query(url) { return await GitHubPulls.load(url, query) }
         switch await fetch(url) {
         case .failure(let problem): return .failure(problem)
         case .success(let data):
