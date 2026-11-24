@@ -5,25 +5,34 @@ changes on the `fork` branch. `main` follows the original untouched.
 
 ## What's different
 
-- **Unread badge on pins** (proposed upstream: issue #1433, PR #1434):
-  Settings › Appearance › Tabs › Show counts on pins puts the count a page
-  writes at the front of its title (`(3) WhatsApp`) as a red badge on the
-  corner of its pin's icon, in the column and in the tab bar. Off by
-  default, as upstream wants new features; switch it on in Settings.
-  `Sources/Search/UnreadBadge.swift`.
-- **Scrolling asks less** (proposed upstream: PR #1435): the page reports its
-  scroll to the window only when the tab's meter would change (151 → 47
-  messages per 150 scrolled frames, measured), Swipe.watch no longer lays
-  the page out on every vertical scroll, and the "show password" watch
-  skips pages with nothing secret on them.
-
-If upstream merges one of these as it is, the rebase in update-fork.sh drops
-the fork's copy on its own. If it is changed on the way in, the rebase stops
-with a conflict on that commit: keep upstream's version (`git rebase --skip`),
-then run the script again.
+- **Live folders of GitHub pull requests**: right-click the pinned rows,
+  New Live Folder…, and give it github.com/pulls (your open pull requests),
+  github.com/pulls/review-requested, /assigned, /mentioned, a repository's
+  Pull requests page, or any of them with a `?q=` from GitHub's search box.
+  The folder holds what is open there, refreshed every five minutes; a
+  pull request merged or closed leaves it. It asks GitHub's search API
+  signed in as the account `gh` has active (`gh auth status`); without gh,
+  public repositories only. Needs Settings › Spaces & Pins › Pinned rows and
+  Folders in pinned rows. `Sources/Search/GitHubPulls.swift`.
+- **Scrolling asks less** (PR #1435, closed for now upstream as idea 995:
+  they want a page where it measurably changes CPU or frames): the page
+  reports its scroll to the window only when the tab's meter would change
+  (151 → 47 messages per 150 scrolled frames, measured), Swipe.watch no
+  longer lays the page out on every vertical scroll, and the "show
+  password" watch skips pages with nothing secret on them.
 - **Updates come from this fork, not the feed**: a copy signed by anyone
   but Office Commun never downloads a release (it could never install one);
   it says once per version that the original has a newer one.
+
+The unread badge on pins started here and is upstream since 1.0.19 (#1434),
+so the fork no longer carries it.
+
+If upstream takes one of these as it is, the rebase in update-fork.sh drops
+the fork's copy on its own. If it is changed on the way in, the rebase stops
+with a conflict on that commit: keep upstream's version (`git rebase --skip`),
+then run the script again. A conflict in CHANGELOG.md alone: keep upstream's
+(`git checkout --ours CHANGELOG.md`); the fork's changes are listed here,
+not there.
 
 ## What this build doesn't have
 
