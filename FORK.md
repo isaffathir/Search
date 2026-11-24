@@ -9,10 +9,12 @@ changes on the `fork` branch. `main` follows the original untouched.
   New Live Folder…, and give it github.com/pulls (your open pull requests),
   github.com/pulls/review-requested, /assigned, /mentioned, a repository's
   Pull requests page, or any of them with a `?q=` from GitHub's search box.
-  The folder holds what is open there, refreshed every five minutes; a
-  pull request merged or closed leaves it. It asks GitHub's search API
-  signed in as the account `gh` has active (`gh auth status`); without gh,
-  public repositories only. Needs Settings › Spaces & Pins › Pinned rows and
+  The folder holds the pull requests open there, each marked Open,
+  Approved or Changes (requested) with its comment count, and under them
+  the ones merged in the last 24 hours, marked Merged; closed ones leave.
+  Refreshed every five minutes, through GitHub's GraphQL search, signed in
+  as the account `gh` has active (`gh auth status`); without gh it reads
+  nothing and says so. Needs Settings › Spaces & Pins › Pinned rows and
   Folders in pinned rows. `Sources/Search/GitHubPulls.swift`.
 - **Scrolling asks less** (PR #1435, closed for now upstream as idea 995:
   they want a page where it measurably changes CPU or frames): the page

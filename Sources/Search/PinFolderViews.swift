@@ -199,17 +199,22 @@ struct FeedItemRow: View {
             if compact {
                 Image(systemName: item.symbol)
                     .font(.system(size: 11))
+                    .foregroundStyle(item.pull.map { AnyShapeStyle($0.tint) } ?? AnyShapeStyle(.foreground))
                     .frame(width: Metrics.iconTile, height: Metrics.iconTile)
             } else {
                 HStack(spacing: 8) {
                     Image(systemName: item.symbol)
                         .font(.system(size: 10))
+                        .foregroundStyle(item.pull == .merged ? AnyShapeStyle(GitHubPulls.State.merged.tint) : AnyShapeStyle(.foreground))
                         .frame(width: 15)
                     Text(item.title)
                         .font(.system(size: prefs.sideTitle))
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Spacer(minLength: 0)
+                    if let pull = item.pull {
+                        PullMarks(state: pull, comments: item.comments ?? 0)
+                    }
                 }
                 .padding(.horizontal, 10)
                 .padding(.leading, CGFloat(depth) * PinFolderHeading.indent)
@@ -222,10 +227,17 @@ struct FeedItemRow: View {
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .onTapGesture { if interactive { browser.openFeedItem(item) } }
         .onHover { hovering = interactive && $0 }
-        .help(compact ? item.title : item.link.absoluteString)
+        .help(tip)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(item.title)
+        .accessibilityLabel(item.pullSaid.map { item.title + ", " + $0 } ?? item.title)
         .accessibilityAddTraits(.isLink)
+    }
+
+    /// The post's title with icons only, else where it goes; a pull
+    /// request's whole: where, which, its title, and its review.
+    private var tip: String {
+        if let place = item.pullPlace, let said = item.pullSaid { return place + "\n" + item.title + "\n" + said }
+        return compact ? item.title : item.link.absoluteString
     }
 }
 

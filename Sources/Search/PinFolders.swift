@@ -40,6 +40,11 @@ struct FeedItem: Codable, Equatable, Identifiable {
     var id: UUID
     var title: String
     var link: URL
+    /// A GitHub folder's pull request (GitHubPulls.swift): where its review
+    /// stands and how many comments it has. Left out of the file for a
+    /// feed's post; a version that doesn't know them reads the line alone.
+    var state: String? = nil
+    var comments: Int? = nil
 }
 
 extension PinFolder {
